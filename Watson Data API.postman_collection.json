@@ -1,0 +1,257 @@
+{
+	"info": {
+		"_postman_id": "998f7b65-eb38-4a19-a240-8b3b322f6e59",
+		"name": "Watson Data API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Generate IAM bearer token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "67408aa7-3be2-40d7-90c2-7a33bc30459a",
+						"exec": [
+							"pm.test(\"Response Status Code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has access_token field\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.access_token).to.exist;",
+							"    postman.setEnvironmentVariable('access_token', jsonData.access_token);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "urn:ibm:params:oauth:grant-type:apikey",
+							"type": "text"
+						},
+						{
+							"key": "apikey",
+							"value": "{{YOUR_API_KEY}}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://iam.cloud.ibm.com/identity/token",
+					"protocol": "https",
+					"host": [
+						"iam",
+						"cloud",
+						"ibm",
+						"com"
+					],
+					"path": [
+						"identity",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Watson Studio Project",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "4c3e381e-e07a-40fe-958b-ac8bac4e794d",
+						"exec": [
+							"pm.test(\"Response Status Code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Response has location field\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.location).to.exist;",
+							"    var location = jsonData.location;",
+							"    var project_id = location.split('/').pop();",
+							"    postman.setEnvironmentVariable('project_id', project_id);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					},
+					{
+						"key": "X-UAA-Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"Jupyter1\",\n\t\"storage\": {\n\t\t\"type\": \"bmcos_object_storage\",\n\t\t\"guid\": \"{{COS_GUID}}\",\n\t\t\"resource_crn\": \"{{COS_RESOURCE_CRN}}\"\n\t}\n}"
+				},
+				"url": {
+					"raw": "https://api.dataplatform.cloud.ibm.com/transactional/v2/projects",
+					"protocol": "https",
+					"host": [
+						"api",
+						"dataplatform",
+						"cloud",
+						"ibm",
+						"com"
+					],
+					"path": [
+						"transactional",
+						"v2",
+						"projects"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Datasource Types",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://api.dataplatform.cloud.ibm.com/v2/datasource_types",
+					"protocol": "https",
+					"host": [
+						"api",
+						"dataplatform",
+						"cloud",
+						"ibm",
+						"com"
+					],
+					"path": [
+						"v2",
+						"datasource_types"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Database Connection",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"datasource_type\": \"{{DB_DATASOURCE_TYPE}}\",\n\t\"name\": \"Db connection\",\n\t\"origin_country\": \"us\",\n\t\"properties\": {\n        \"database\": \"{{DB_NAME}}\",\n        \"username\": \"{{DB_USERNAME}}\",\n        \"password\": \"{{DB_PASSWORD}}\",\n        \"port\": \"{{DB_PORT}}\",\n        \"host\": \"{{DB_HOST}}\"\n    }\n}"
+				},
+				"url": {
+					"raw": "https://api.dataplatform.cloud.ibm.com/v2/connections?project_id={{project_id}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"dataplatform",
+						"cloud",
+						"ibm",
+						"com"
+					],
+					"path": [
+						"v2",
+						"connections"
+					],
+					"query": [
+						{
+							"key": "project_id",
+							"value": "{{project_id}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Members",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"members\": [\n\t\t{\n\t\t\t\"user_name\": \"{{ENTER_EMAIL_HERE}}\",\n\t\t\t\"role\": \"viewer\",\n\t\t\t\"type\": \"user\",\n\t\t\t\"state\": \"PENDING\"\n\t\t},\n\t\t{\n\t\t\t\"user_name\": \"{{ENTER_ANOTHER_EMAIL_HERE}}\",\n\t\t\t\"role\": \"editor\",\n\t\t\t\"type\": \"user\",\n\t\t\t\"id\": \"{{IAM_ID_HERE}}\",\n\t\t\t\"state\": \"ACTIVE\"\n\t\t},\n\t\t{\n\t\t\t\"user_name\": \"{{ENTER_SERVICE_ID_HERE}}\",\n\t\t\t\"role\": \"admin\",\n\t\t\t\"type\": \"service\",\n\t\t\t\"id\": \"{{ENTER_SERVICE_ID_HERE}}\"\n\t\t}\n\t]\n}"
+				},
+				"url": {
+					"raw": "https://api.dataplatform.cloud.ibm.com/v2/projects/{{project_id}}/members",
+					"protocol": "https",
+					"host": [
+						"api",
+						"dataplatform",
+						"cloud",
+						"ibm",
+						"com"
+					],
+					"path": [
+						"v2",
+						"projects",
+						"{{project_id}}",
+						"members"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
